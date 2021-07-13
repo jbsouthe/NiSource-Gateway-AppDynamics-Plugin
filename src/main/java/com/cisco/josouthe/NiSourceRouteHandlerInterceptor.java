@@ -35,6 +35,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
 
     @Override
     public Object onMethodBegin(Object objectIntercepted, String className, String methodName, Object[] params) {
+        getLogger().debug(String.format("%s.%s() onMethodBegin firing",className,methodName));
         Object request = null;
         if( params.length > 0 ) {
             request = getReflectiveObject(params[0], getRequest);
@@ -52,7 +53,9 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
     }
 
     private String getCorrelationHeader(Object request) {
-        return (String) getReflectiveObject(request, getHeader, CORRELATION_HEADER_KEY);
+        String correlationHeader = (String) getReflectiveObject(request, getHeader, CORRELATION_HEADER_KEY);
+        getLogger().debug(String.format("getCorrelationHeader found header: %s",correlationHeader));
+        return correlationHeader;
     }
 
     private ServletContext buildServletContext(Object request) {
@@ -65,6 +68,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
         urlSB.append( getReflectiveString(request, getUri, "/unknown-uri") );
         try{
             builder.withURL(urlSB.toString());
+            getLogger().debug(String.format("buildServletContext with URL: %s",urlSB.toString()));
         } catch (MalformedURLException e) {
             getLogger().info(String.format("Oops, Bad URL %s Exception: %s",urlSB.toString(),e.getMessage()));
             return null;
@@ -72,12 +76,17 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
 
         builder.withRequestMethod( getReflectiveString(request,getMethod,"POST") );
         builder.withHostValue( getReflectiveString(request,getHost,"UNKNOWN-HOST") );
+        if( getLogger().isDebugEnabled() ) {
+            getLogger().debug(String.format("buildServletContext with Method: %s",getReflectiveString(request,getMethod,"POST")));
+            getLogger().debug(String.format("buildServletContext with Host: %s",getReflectiveString(request,getHost,"UNKNOWN-HOST")));
+        }
 
         Map<String,String> headers = new HashMap<>();
         Object headersMultiMap = getReflectiveObject(request,getHeaders);
         if( headersMultiMap != null ) {
             for( String name : (Set<String>) getReflectiveObject(headersMultiMap,getMapNames) ){
                 headers.put(name, (String) getReflectiveObject(headersMultiMap,getMapEntry,name) );
+                getLogger().debug(String.format("buildServletContext with Header: %s=%s",name, headers.get(name)));
             }
             builder.withHeaders(headers);
         }
@@ -87,6 +96,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
         if( parametersMultiMap != null ) {
             for( String name : (Set<String>) getReflectiveObject(parametersMultiMap,getMapNames) ) {
                 parameters.put(name, new String[] { (String) getReflectiveObject(parametersMultiMap,getMapEntry,name) });
+                getLogger().debug(String.format("buildServletContext with Parameter: %s=%s",name, parameters.get(name)));
             }
             builder.withParameters(parameters);
         }
@@ -98,6 +108,10 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
     @Override
     public void onMethodEnd(Object state, Object object, String className, String methodName, Object[] params, Throwable exception, Object returnVal) {
         Transaction transaction = (Transaction) state;
+        getLogger().debug(String.format("%s.%s() onMethodEnd attempting to end transaction with uid: %s and error: %s",
+                (transaction == null ? "transaction is ok, here is null" : transaction.getUniqueIdentifier()),
+                (exception == null ? "no error" : exception.getMessage())
+        ));
         if( transaction == null ) return;
 
         if( exception != null ) transaction.markAsError( exception.getMessage() );
@@ -112,6 +126,8 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
         rules.add(new Rule.Builder(
                 "com.nisource.endpoints.NisourceRouteHandlersBase")
                 .classMatchType(SDKClassMatchType.INHERITS_FROM_CLASS)
+                .methodMatchString(".*")
+                .methodStringMatchType(SDKStringMatchType.REGEX)
                 .withParams("io.vertx.ext.web.RoutingContext")
                 .build()
         );
