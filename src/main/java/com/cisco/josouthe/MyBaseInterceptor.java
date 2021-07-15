@@ -26,6 +26,7 @@ public abstract class MyBaseInterceptor extends AGenericInterceptor {
     public MyBaseInterceptor() {
         super();
         initialize();
+        getLogger().info(String.format("Initialized plugin class %s version %s build date %s",getClass().getCanonicalName(),MetaData.VERSION, MetaData.BUILDTIMESTAMP));
     }
 
     abstract public Object onMethodBegin(Object objectIntercepted, String className, String methodName, Object[] params);

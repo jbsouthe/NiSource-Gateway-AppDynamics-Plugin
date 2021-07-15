@@ -131,6 +131,13 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                 .withParams("io.vertx.ext.web.RoutingContext")
                 .build()
         );
+        rules.add(new Rule.Builder(
+                "com.nisource.endpoints.NisourceRouteHandlersBase")
+                .classMatchType(SDKClassMatchType.INHERITS_FROM_CLASS)
+                .methodStringMatchType(SDKStringMatchType.NOT_EMPTY)
+                .withParams("io.vertx.ext.web.RoutingContext")
+                .build()
+        );
         return rules;
     }
 }
