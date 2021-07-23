@@ -1,16 +1,18 @@
 package com.cisco.josouthe;
 
-import com.appdynamics.agent.api.*;
+import com.appdynamics.agent.api.AppdynamicsAgent;
+import com.appdynamics.agent.api.EntryTypes;
+import com.appdynamics.agent.api.Transaction;
 import com.appdynamics.instrumentation.sdk.Rule;
 import com.appdynamics.instrumentation.sdk.SDKClassMatchType;
 import com.appdynamics.instrumentation.sdk.SDKStringMatchType;
 import com.appdynamics.instrumentation.sdk.toolbox.reflection.IReflector;
 
-import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
+public class NiSourceHTTPRequestInterceptor extends MyBaseInterceptor {
 
     private static final ConcurrentHashMap<Object, TransactionDictionary> transactionsMap = new ConcurrentHashMap<>();
     Scheduler scheduler;
@@ -18,7 +20,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
     IReflector getUri, getScheme, getMethod, getParams, getHost, getHeaders, getHeader; //methods on HttpServerRequest
     IReflector getMapNames, getMapEntry; //methods on MultiMap
 
-    public NiSourceRouteHandlerInterceptor() {
+    public NiSourceHTTPRequestInterceptor() {
         super();
         scheduler = Scheduler.getInstance(30000L, 120000L, transactionsMap);
         scheduler.start();
@@ -65,7 +67,6 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                 break;
             }
             case "onFailure": //fall through
-            case "completeFutureFromResponse":
             case "onSuccess": {
                 TransactionDictionary transactionDictionary = transactionsMap.get(objectIntercepted);
                 transaction = transactionDictionary.getTransaction();
@@ -153,7 +154,6 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                 Throwable throwable = (Throwable) params[0];
                 transaction.markAsError(throwable.getMessage());
             }
-            case "completeFutureFromResponse":
             case "onSuccess": {
                 transaction.end();
                 transactionsMap.get(object).finish();
@@ -186,8 +186,8 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                 .methodStringMatchType(SDKStringMatchType.NOT_EMPTY)
                 .withParams("io.vertx.ext.web.RoutingContext")
                 .build()
-        ); */
-        for( String method : new String[]{"<init>","onSuccess","onFailure","completeFutureFromResponse"}) {
+        );
+        for( String method : new String[]{"<init>","onSuccess","onFailure"}) {
             rules.add(new Rule.Builder(
                     "com.nisource.remote.rest.handlers.RestResponseHandler")
                     .classMatchType(SDKClassMatchType.INHERITS_FROM_CLASS)
@@ -196,6 +196,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                     .build()
             );
         }
+        */
         return rules;
     }
 }
