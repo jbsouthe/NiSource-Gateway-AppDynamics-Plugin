@@ -140,8 +140,8 @@ public class NiSourceHTTPRequestInterceptor extends MyBaseInterceptor {
         Transaction transaction = (Transaction) state;
         getLogger().debug(String.format("%s.%s() onMethodEnd attempting to end transaction with uid: %s and error: %s",
                 className, methodName,
-                (transaction == null ? "transaction is ok, here is null" : transaction.getUniqueIdentifier()),
-                (exception == null ? "no error" : exception.getMessage())
+                (transaction == null ? "transaction is null" : transaction.getUniqueIdentifier()),
+                (exception == null ? "no exception passed" : exception.getMessage())
         ));
         if( transaction == null ) return;
 
@@ -152,7 +152,8 @@ public class NiSourceHTTPRequestInterceptor extends MyBaseInterceptor {
             }
             case "onFailure": { //fall through
                 Throwable throwable = (Throwable) params[0];
-                transaction.markAsError(throwable.getMessage());
+                Integer statusCode = (Integer) params[1];
+                transaction.markAsError(String.format("onFailure Status Code %s, Exception: %s",statusCode,throwable.getMessage()));
             }
             case "onSuccess": {
                 transaction.end();
@@ -170,7 +171,14 @@ public class NiSourceHTTPRequestInterceptor extends MyBaseInterceptor {
     @Override
     public List<Rule> initializeRules() {
         List<Rule> rules = new ArrayList<>();
-
+        for( String method : new String[]{ "<init>", "onSuccess", "onFailure"} )
+            rules.add(new Rule.Builder(
+                    "com.nisource.remote.rest.handlers.RestResponseHandler")
+                    .classMatchType(SDKClassMatchType.IMPLEMENTS_INTERFACE)
+                    .methodMatchString(method)
+                    .methodStringMatchType(SDKStringMatchType.EQUALS)
+                    .build()
+            );
         /* nope
         rules.add(new Rule.Builder(
                 "com.nisource.endpoints.NisourceRouteHandlersBase")
