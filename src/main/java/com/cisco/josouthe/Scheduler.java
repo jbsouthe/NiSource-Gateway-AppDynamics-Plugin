@@ -1,21 +1,26 @@
 package com.cisco.josouthe;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Scheduler extends Thread {
     private static final String THREAD_NAME = "AppDynamics NiSource Gateway Transaction Cleaner Thread";
-    ConcurrentHashMap<Object, TransactionDictionary> map = null;
+    ArrayList<ConcurrentHashMap<Object, TransactionDictionary>> maps = new ArrayList<>();
     long sleepTime = 30000;
     long ageToDiscard = 120000;
     private static Scheduler instance = null;
 
     public synchronized static Scheduler getInstance(long sleepTimeMS, long ageToDiscardMS, ConcurrentHashMap<Object, TransactionDictionary> concurrentHashMap ) {
-        if( instance == null )
+        boolean start = false;
+        if( instance == null ) {
             instance = new Scheduler();
+            start = true;
+        }
         if( sleepTimeMS > 30000 ) instance.sleepTime = sleepTimeMS; //safety check, we aren't going faster than this
-        instance.ageToDiscard = ageToDiscardMS;
-        instance.map = concurrentHashMap;
+        if( ageToDiscardMS < instance.ageToDiscard ) instance.ageToDiscard = ageToDiscardMS; //safety check, we aren't keeping longer than this
+        instance.maps.add(concurrentHashMap);
+        if( start ) instance.start();
         return instance;
     }
 
@@ -43,13 +48,15 @@ public class Scheduler extends Thread {
     @Override
     public void run() {
         while(true) {
-            long now = new Date().getTime();
-            long numTransactions = map.size();
-            long numRemoved = 0;
-            for (TransactionDictionary transactionDictionary : map.values()) {
-                if( transactionDictionary.isFinished() || now > (transactionDictionary.getLastTouchTime() + ageToDiscard) ) {
-                    numRemoved++;
-                    map.remove( transactionDictionary.futureTask);
+            for( ConcurrentHashMap<Object, TransactionDictionary> map : maps ) {
+                long now = new Date().getTime();
+                long numTransactions = map.size();
+                long numRemoved = 0;
+                for (TransactionDictionary transactionDictionary : map.values()) {
+                    if( transactionDictionary.isFinished() || now > (transactionDictionary.getLastTouchTime() + ageToDiscard) ) {
+                        numRemoved++;
+                        map.remove( transactionDictionary.futureTask );
+                    }
                 }
             }
             try {
