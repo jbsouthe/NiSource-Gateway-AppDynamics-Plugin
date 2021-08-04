@@ -21,7 +21,6 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
     public NiSourceRouteHandlerInterceptor() {
         super();
         scheduler = Scheduler.getInstance(30000L, 120000L, transactionsMap);
-        scheduler.start();
 
         getRequest = makeInvokeInstanceMethodReflector("request" ); //returns HttpServerRequest object
 
@@ -187,6 +186,7 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                 .withParams("io.vertx.ext.web.RoutingContext")
                 .build()
         ); */
+        /* this is disabled, because we moved it to NiSourceHTTPRequestInterceptor
         for( String method : new String[]{"<init>","onSuccess","onFailure","completeFutureFromResponse"}) {
             rules.add(new Rule.Builder(
                     "com.nisource.remote.rest.handlers.RestResponseHandler")
@@ -196,6 +196,8 @@ public class NiSourceRouteHandlerInterceptor extends MyBaseInterceptor {
                     .build()
             );
         }
+
+         */
         return rules;
     }
 }
