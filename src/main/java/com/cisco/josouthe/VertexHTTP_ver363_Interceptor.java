@@ -61,6 +61,7 @@ public class VertexHTTP_ver363_Interceptor extends MyBaseInterceptor{
                     getLogger().debug(String.format("Transaction already active, using BT: %s", transaction.getUniqueIdentifier()));
                 }
                 transactionsMap.put(objectIntercepted, new TransactionDictionary(transaction, objectIntercepted));
+                transaction.markHandoff(objectIntercepted);
                 break;
             }
             case "handler": { //just FYI for now
