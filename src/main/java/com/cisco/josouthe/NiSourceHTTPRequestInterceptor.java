@@ -23,7 +23,6 @@ public class NiSourceHTTPRequestInterceptor extends MyBaseInterceptor {
     public NiSourceHTTPRequestInterceptor() {
         super();
         scheduler = Scheduler.getInstance(30000L, 120000L, transactionsMap);
-        scheduler.start();
 
         getRequest = makeInvokeInstanceMethodReflector("request" ); //returns HttpServerRequest object
 
