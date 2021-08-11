@@ -149,6 +149,14 @@ public class NiSourceApiClientExitCallInterceptor extends MyBaseInterceptor{
                 .withParams("com.squareup.okhttp.Call", "java.lang.reflect.Type", "com.nisource.remote.rest.generated.ApiCallback")
                 .build()
         );
+        rules.add( new Rule.Builder(
+                "com.nisource.remote.rest.generated.ApiClient")
+                .classMatchType(SDKClassMatchType.INHERITS_FROM_CLASS)
+                .methodMatchString("executeAsync")
+                .methodStringMatchType(SDKStringMatchType.EQUALS)
+                .withParams("com.squareup.okhttp.Call", "java.lang.reflect.Type", "com.nisource.remote.rest.generated.ApiCallback")
+                .build()
+        );
 
         /*
         From: com.nisource.remote.rest.generated.ApiCallback<T>
