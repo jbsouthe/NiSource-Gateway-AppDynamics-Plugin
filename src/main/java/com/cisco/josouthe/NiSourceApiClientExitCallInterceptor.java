@@ -66,6 +66,8 @@ public class NiSourceApiClientExitCallInterceptor extends MyBaseInterceptor{
 
                 exitCall = transaction.startHttpExitCall(descriptionMap, targetURL, true);
                 addCorrelationHeader( request, exitCall.getCorrelationHeader() );
+                exitCall.stash(params[2]); //stash the ApiCallback, third parameter, object for later callback
+                getLogger().debug(String.format("Stashing ExitCall %s on object %s", exitCall.getCorrelationHeader(), params[2]));
                 break;
             }
             case "onFailure": { }
@@ -92,8 +94,6 @@ public class NiSourceApiClientExitCallInterceptor extends MyBaseInterceptor{
         ExitCall exitCall = (ExitCall) state;
         switch (methodName) {
             case "executeAsync": {
-                exitCall.stash(params[2]); //stash the ApiCallback, third parameter, object for later callback
-                getLogger().debug(String.format("Stashing ExitCall %s on object %s", exitCall.getCorrelationHeader(), params[2]));
                 break;
             }
             case "onFailure": {
